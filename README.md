@@ -1,75 +1,96 @@
-# React + TypeScript + Vite
+# Personal Reading Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Personal Reading Tracker è una web app sviluppata con React, TypeScript, Tailwind CSS e Vite.
 
-Currently, two official plugins are available:
+L’app permette di cercare libri tramite la Open Library API, visualizzare i risultati in card, assegnare uno stato di lettura, valutare i libri letti e salvare i preferiti in una libreria personale laterale.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Il progetto è stato realizzato come applicazione portfolio per consolidare i concetti principali di React e frontend development.
 
-## React Compiler
+## Funzionalità
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Ricerca libri per titolo o autore
+- Recupero dati reali dalla Open Library API
+- Visualizzazione dei libri in card responsive
+- Informazioni mostrate:
+  - copertina
+  - titolo
+  - autore
+  - anno di pubblicazione
+  - editore
+  - numero di pagine
+- Gestione dello stato di lettura:
+  - Want to read
+  - Reading
+  - Read
+- Valutazione dei libri solo quando lo stato è `Read`
+- Sistema di rating con stelle
+- Possibilità di segnare un libro come preferito
+- Sidebar “My Library” con sezioni dedicate:
+  - Want to read
+  - Reading
+  - Read
+  - Favourites
+- Apertura e chiusura delle sezioni della libreria
+- Rimozione dei singoli libri dalle sezioni
+- Reset completo della libreria
+- Persistenza dei dati tramite localStorage
+- Interfaccia responsive realizzata con Tailwind CSS
 
-## Expanding the ESLint configuration
+## Stack utilizzato
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- React
+- TypeScript
+- Tailwind CSS
+- Vite
+- Open Library API
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Concetti praticati
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Durante lo sviluppo del progetto ho lavorato su:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- componenti React
+- props tipizzate
+- `useState`
+- `useEffect`
+- input controllati
+- gestione degli eventi
+- array di oggetti
+- metodi `map` e `filter`
+- rendering condizionale
+- funzioni passate come props
+- aggiornamento immutabile dello state
+- chiamate API con `fetch`
+- `async / await`
+- gestione di loading ed errori
+- trasformazione dei dati ricevuti da API esterne
+- definizione di tipi base con TypeScript
+- salvataggio dati in localStorage
+- layout responsive con Tailwind CSS
 
-```
+## API utilizzata
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Il progetto utilizza la Open Library Search API.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Esempio di endpoint:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+https://openlibrary.org/search.json?title=harry%20potter&limit=12
 
-```
+I dati ricevuti dall’API vengono trasformati in un tipo interno Book, così il resto dell’app può lavorare con dati più puliti e prevedibili.
+
+## Alcune possibili evoluzioni del progetto
+
+- separare i risultati di ricerca dalla libreria personale
+- aggiungere una modale per ingrandire la copertina dei libri
+- aggiungere una sezione di libri consigliati
+- migliorare la logica di persistenza con localStorage
+- aggiungere animazioni alla sidebar e alle sezioni apribili
+- migliorare gli stati vuoti dell’interfaccia
+- aggiungere test per componenti e funzioni principali
+
+## Obiettivo del progetto
+
+Questo progetto è stato creato per mettere in pratica le basi di React, TypeScript e Tailwind CSS attraverso una piccola applicazione realistica, curata sia nella logica sia nell’interfaccia, su una mia idea personale.
+
+## Autore
+
+Realizzato da Stefano Marzella come parte del mio percorso di crescita nel frontend development.
