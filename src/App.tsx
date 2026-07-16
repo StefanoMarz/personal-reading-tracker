@@ -1,20 +1,35 @@
 import { useEffect, useState } from "react";
 import { BookList } from "./components/BookList";
 import { LibrarySidebar } from "./components/LibrarySidebar";
-import type { Book, ReadingStatus, LibrarySectionType } from "./types/book";
+import type {
+  Book,
+  ReadingStatus,
+  LibrarySectionType,
+} from "./types/book";
 import { searchBooks, type SearchBy } from "./services/booksApi";
+
+const LOCAL_STORAGE_KEY = "personal-reading-tracker-books";
 
 const App = () => {
   const [search, setSearch] = useState("");
 
-  const [books, setBooks] = useState<Book[]>(() => {
-    const savedBooks = localStorage.getItem("personal-reading-tracker-books");
+  // Contains only the books returned by the latest API search.
+  const [searchResults, setSearchResults] = useState<Book[]>([]);
 
-    if (savedBooks) {
-      return JSON.parse(savedBooks);
+  // Restores the personal library from localStorage when the app starts.
+  const [libraryBooks, setLibraryBooks] = useState<Book[]>(() => {
+    const savedBooks = localStorage.getItem(LOCAL_STORAGE_KEY);
+
+    if (!savedBooks) {
+      return [];
     }
 
-    return [];
+    try {
+      return JSON.parse(savedBooks) as Book[];
+    } catch (error) {
+      console.error("Could not read the saved library:", error);
+      return [];
+    }
   });
 
   const [searchBy, setSearchBy] = useState<SearchBy>("title");
@@ -23,15 +38,67 @@ const App = () => {
   const [error, setError] = useState("");
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
+  // Keeps the personal library synchronized with localStorage.
   useEffect(() => {
     localStorage.setItem(
-      "personal-reading-tracker-books",
-      JSON.stringify(books)
+      LOCAL_STORAGE_KEY,
+      JSON.stringify(libraryBooks)
     );
-  }, [books]);
+  }, [libraryBooks]);
+
+  // Determines whether a book should remain inside the personal library.
+  const isBookSaved = (book: Book) => {
+    return book.status !== "" || book.isFavorite || book.rating > 0;
+  };
+
+  /*
+   * Updates a book both in the search results and in the personal library.
+   * If the book has no status, favourite or rating, it is removed from
+   * libraryBooks but can remain visible in the current search results.
+   */
+  const updateBookEverywhere = (
+    bookId: string,
+    updateBook: (book: Book) => Book
+  ) => {
+    const sourceBook =
+      libraryBooks.find((book) => book.id === bookId) ??
+      searchResults.find((book) => book.id === bookId);
+
+    if (!sourceBook) {
+      return;
+    }
+
+    const updatedBook = updateBook(sourceBook);
+
+    setSearchResults((currentResults) =>
+      currentResults.map((book) =>
+        book.id === bookId ? updatedBook : book
+      )
+    );
+
+    setLibraryBooks((currentLibrary) => {
+      if (!isBookSaved(updatedBook)) {
+        return currentLibrary.filter((book) => book.id !== bookId);
+      }
+
+      const alreadySaved = currentLibrary.some(
+        (book) => book.id === bookId
+      );
+
+      if (alreadySaved) {
+        return currentLibrary.map((book) =>
+          book.id === bookId ? updatedBook : book
+        );
+      }
+
+      return [...currentLibrary, updatedBook];
+    });
+  };
 
   const handleSearch = async () => {
-    if (search.trim() === "") {
+    const cleanSearch = search.trim();
+
+    if (cleanSearch === "") {
       return;
     }
 
@@ -40,39 +107,58 @@ const App = () => {
     setError("");
 
     try {
-      const results = await searchBooks(search, searchBy);
-      setBooks(results);
+      const results = await searchBooks(cleanSearch, searchBy);
+
+      /*
+       * Reapplies saved status, rating and favourite values when a book
+       * already exists in the personal library.
+       */
+      const resultsWithSavedData = results.map((result) => {
+        const savedBook = libraryBooks.find(
+          (libraryBook) => libraryBook.id === result.id
+        );
+
+        if (!savedBook) {
+          return result;
+        }
+
+        return {
+          ...result,
+          status: savedBook.status,
+          isFavorite: savedBook.isFavorite,
+          rating: savedBook.rating,
+        };
+      });
+
+      setSearchResults(resultsWithSavedData);
     } catch (error) {
       console.error(error);
-      setBooks([]);
+      setSearchResults([]);
       setError("Something went wrong while searching books.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Clears the library without removing the current search results.
   const handleResetLibrary = () => {
-    const resetBooks: Book[] = books.map((book) => {
-      return {
+    setLibraryBooks([]);
+
+    setSearchResults((currentResults) =>
+      currentResults.map((book) => ({
         ...book,
         status: "",
         isFavorite: false,
         rating: 0,
-      };
-    });
-
-    setBooks(resetBooks);
+      }))
+    );
   };
 
   const handleRemoveFromLibrarySection = (
     bookId: string,
     section: LibrarySectionType
   ) => {
-    const updatedBooks: Book[] = books.map((book) => {
-      if (book.id !== bookId) {
-        return book;
-      }
-
+    updateBookEverywhere(bookId, (book) => {
       if (section === "favourites") {
         return {
           ...book,
@@ -86,66 +172,56 @@ const App = () => {
         rating: 0,
       };
     });
-
-    setBooks(updatedBooks);
   };
 
-  const handleStatusChange = (bookId: string, newStatus: ReadingStatus) => {
-    const updatedBooks: Book[] = books.map((book) => {
-      if (book.id === bookId) {
-        return {
-          ...book,
-          status: newStatus,
-          rating: newStatus === "read" ? book.rating : 0,
-        };
-      }
+  const handleStatusChange = (
+    bookId: string,
+    newStatus: ReadingStatus
+  ) => {
+    updateBookEverywhere(bookId, (book) => ({
+      ...book,
+      status: newStatus,
 
-      return book;
-    });
-
-    setBooks(updatedBooks);
+      // A rating is valid only for books marked as read.
+      rating: newStatus === "read" ? book.rating : 0,
+    }));
   };
 
-  const handleRatingChange = (bookId: string, newRating: number) => {
-    const updatedBooks: Book[] = books.map((book) => {
-      if (book.id === bookId) {
-        return {
-          ...book,
-          rating: newRating,
-        };
-      }
-
-      return book;
-    });
-
-    setBooks(updatedBooks);
+  const handleRatingChange = (
+    bookId: string,
+    newRating: number
+  ) => {
+    updateBookEverywhere(bookId, (book) => ({
+      ...book,
+      rating: newRating,
+    }));
   };
 
   const handleFavoriteToggle = (bookId: string) => {
-    const updatedBooks: Book[] = books.map((book) => {
-      if (book.id === bookId) {
-        return {
-          ...book,
-          isFavorite: !book.isFavorite,
-        };
-      }
-
-      return book;
-    });
-
-    setBooks(updatedBooks);
+    updateBookEverywhere(bookId, (book) => ({
+      ...book,
+      isFavorite: !book.isFavorite,
+    }));
   };
 
-  const wantToReadBooks = books.filter(
+  // Creates the four library sections from the saved books.
+  const wantToReadBooks = libraryBooks.filter(
     (book) => book.status === "want to read"
   );
-  const readingBooks = books.filter((book) => book.status === "reading");
-  const readBooks = books.filter((book) => book.status === "read");
-  const favouriteBooks = books.filter((book) => book.isFavorite);
 
-  const savedBooksCount = books.filter((book) => {
-    return book.status !== "" || book.isFavorite || book.rating > 0;
-  }).length;
+  const readingBooks = libraryBooks.filter(
+    (book) => book.status === "reading"
+  );
+
+  const readBooks = libraryBooks.filter(
+    (book) => book.status === "read"
+  );
+
+  const favouriteBooks = libraryBooks.filter(
+    (book) => book.isFavorite
+  );
+
+  const savedBooksCount = libraryBooks.length;
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
@@ -160,8 +236,8 @@ const App = () => {
           </h1>
 
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
-            Search books, track your reading status, rate completed books, and
-            save your favourites.
+            Search books, track your reading status, rate completed books,
+            and save your favourites.
           </p>
 
           <button
@@ -170,6 +246,7 @@ const App = () => {
             className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20"
           >
             My Library
+
             {savedBooksCount > 0 && (
               <span className="ml-2 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-200">
                 {savedBooksCount}
@@ -182,7 +259,9 @@ const App = () => {
           <div className="flex gap-3">
             <select
               value={searchBy}
-              onChange={(event) => setSearchBy(event.target.value as SearchBy)}
+              onChange={(event) =>
+                setSearchBy(event.target.value as SearchBy)
+              }
               className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none"
             >
               <option value="title">Title</option>
@@ -194,10 +273,16 @@ const App = () => {
               placeholder="Search a book title..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="flex-1 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder:text-slate-500 outline-none"
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  void handleSearch();
+                }
+              }}
+              className="flex-1 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none placeholder:text-slate-500"
             />
 
             <button
+              type="button"
               onClick={handleSearch}
               disabled={search.trim() === "" || isLoading}
               className="rounded-xl bg-violet-600 px-5 py-3 font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
@@ -207,16 +292,29 @@ const App = () => {
           </div>
         </div>
 
-        {isLoading && <p className="mt-6 text-slate-400">Searching books...</p>}
-
-        {error && <p className="mt-6 text-red-400">{error}</p>}
-
-        {hasSearched && !isLoading && !error && books.length === 0 && (
-          <p className="mt-6 text-slate-400">No books found.</p>
+        {isLoading && (
+          <p className="mt-6 text-slate-400">
+            Searching books...
+          </p>
         )}
 
+        {error && (
+          <p className="mt-6 text-red-400">
+            {error}
+          </p>
+        )}
+
+        {hasSearched &&
+          !isLoading &&
+          !error &&
+          searchResults.length === 0 && (
+            <p className="mt-6 text-slate-400">
+              No books found.
+            </p>
+          )}
+
         <BookList
-          books={books}
+          books={searchResults}
           onStatusChange={handleStatusChange}
           onFavouriteToggle={handleFavoriteToggle}
           onRatingChange={handleRatingChange}
@@ -239,4 +337,3 @@ const App = () => {
 };
 
 export default App;
-
