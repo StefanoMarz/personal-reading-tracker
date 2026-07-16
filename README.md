@@ -6,6 +6,10 @@ L’app permette di cercare libri tramite la Open Library API, visualizzare i ri
 
 Il progetto è stato realizzato come applicazione portfolio per consolidare i principali concetti di React, TypeScript e frontend development attraverso una piccola applicazione completa e realistica.
 
+## Live Demo
+
+[View the live application](https://personal-reading-tracker-blue.vercel.app/)
+
 ## Funzionalità
 
 * Ricerca di libri per titolo o autore
@@ -19,7 +23,7 @@ Il progetto è stato realizzato come applicazione portfolio per consolidare i pr
   * anno di pubblicazione
   * editore
   * numero di pagine
-  
+
 * Gestione dello stato di lettura:
 
   * Want to read
