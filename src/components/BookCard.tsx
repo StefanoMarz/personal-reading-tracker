@@ -42,22 +42,15 @@ export const BookCard = ({
             {book.title}
           </h2>
 
-          <p className="mt-1 truncate text-sm text-slate-300">
-            {book.author}
-          </p>
+          <p className="mt-1 truncate text-sm text-slate-300">{book.author}</p>
 
           <div className="mt-3 space-y-1 text-xs text-slate-400">
             <p>Year: {book.year}</p>
 
-            <p className="truncate">
-              Publisher: {book.publisher}
-            </p>
+            <p className="truncate">Publisher: {book.publisher}</p>
 
             <p>
-              Pages:{" "}
-              <span className="text-emerald-400">
-                {book.pages}
-              </span>
+              Pages: <span className="text-emerald-400">{book.pages}</span>
             </p>
           </div>
         </div>
@@ -66,10 +59,7 @@ export const BookCard = ({
           <select
             value={book.status}
             onChange={(event) =>
-              onStatusChange(
-                book.id,
-                event.target.value as ReadingStatus
-              )
+              onStatusChange(book.id, event.target.value as ReadingStatus)
             }
             className="w-full rounded-xl border border-violet-500/30 bg-slate-800 px-3 py-2 text-sm text-violet-100 outline-none transition focus:border-violet-400"
           >
@@ -86,8 +76,7 @@ export const BookCard = ({
                   key={star}
                   type="button"
                   onClick={() => {
-                    const newRating =
-                      book.rating === star ? 0 : star;
+                    const newRating = book.rating === star ? 0 : star;
 
                     onRatingChange(book.id, newRating);
                   }}

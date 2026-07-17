@@ -7,9 +7,7 @@ type RecommendedBooksProps = {
   onBookClick: (book: Book) => void;
 };
 
-export const RecommendedBooks = ({
-  onBookClick,
-}: RecommendedBooksProps) => {
+export const RecommendedBooks = ({ onBookClick }: RecommendedBooksProps) => {
   const [recommendedBooks, setRecommendedBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -68,8 +66,7 @@ export const RecommendedBooks = ({
       }
 
       const reachedEnd =
-        carousel.scrollLeft + carousel.clientWidth >=
-        carousel.scrollWidth - 10;
+        carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - 10;
 
       if (reachedEnd) {
         carousel.scrollTo({
@@ -91,9 +88,7 @@ export const RecommendedBooks = ({
   if (isLoading) {
     return (
       <section className="mt-10">
-        <p className="text-sm text-slate-400">
-          Loading recommended books...
-        </p>
+        <p className="text-sm text-slate-400">Loading recommended books...</p>
       </section>
     );
   }

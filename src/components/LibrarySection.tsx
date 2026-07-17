@@ -61,20 +61,29 @@ export const LibrarySection = ({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {book.isFavorite && (
-                      <span className="text-lg leading-none text-violet-400">
-                        ♥
-                      </span>
+                    {book.isFavorite && section !== "favourites" && (
+                      <span className="text-violet-400">♥</span>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => onRemoveBook(book.id, section)}
-                      className="rounded-full border border-slate-700 px-2 text-xs text-slate-400 transition hover:border-red-500/50 hover:text-red-300"
-                      aria-label={`Remove ${book.title} from ${title}`}
-                    >
-                      ×
-                    </button>
+                    {section === "favourites" ? (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveBook(book.id, section)}
+                        aria-label={`Remove ${book.title} from favourites`}
+                        className="text-2xl leading-none text-violet-400 transition hover:scale-110 hover:text-violet-300"
+                      >
+                        ♥
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveBook(book.id, section)}
+                        aria-label={`Remove ${book.title} from ${title}`}
+                        className="text-xl text-slate-400 transition hover:text-red-400"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                 </div>
 

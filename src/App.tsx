@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import { BookList } from "./components/BookList";
 import { LibrarySidebar } from "./components/LibrarySidebar";
 import { RecommendedBooks } from "./components/RecommendedBooks";
-import type {
-  Book,
-  ReadingStatus,
-  LibrarySectionType,
-} from "./types/book";
+import type { Book, ReadingStatus, LibrarySectionType } from "./types/book";
 import { searchBooks, type SearchBy } from "./services/booksApi";
 
 const LOCAL_STORAGE_KEY = "personal-reading-tracker-books";
@@ -41,10 +37,7 @@ const App = () => {
 
   // Salva la libreria nel localStorage ogni volta che viene modificata.
   useEffect(() => {
-    localStorage.setItem(
-      LOCAL_STORAGE_KEY,
-      JSON.stringify(libraryBooks)
-    );
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(libraryBooks));
   }, [libraryBooks]);
 
   // Verifica se un libro contiene almeno un dato personale da salvare.
@@ -72,9 +65,7 @@ const App = () => {
     const updatedBook = updateBook(sourceBook);
 
     setSearchResults((currentResults) =>
-      currentResults.map((book) =>
-        book.id === bookId ? updatedBook : book
-      )
+      currentResults.map((book) => (book.id === bookId ? updatedBook : book))
     );
 
     setLibraryBooks((currentLibrary) => {
@@ -82,9 +73,7 @@ const App = () => {
         return currentLibrary.filter((book) => book.id !== bookId);
       }
 
-      const alreadySaved = currentLibrary.some(
-        (book) => book.id === bookId
-      );
+      const alreadySaved = currentLibrary.some((book) => book.id === bookId);
 
       if (alreadySaved) {
         return currentLibrary.map((book) =>
@@ -131,8 +120,8 @@ const App = () => {
           rating: savedBook.rating,
         };
       });
-
       setSearchResults(resultsWithSavedData);
+      setSearch("");
     } catch (error) {
       console.error(error);
       setSearchResults([]);
@@ -143,11 +132,11 @@ const App = () => {
   };
 
   // Avvia una ricerca per titolo quando viene selezionato un libro consigliato.
-const handleRecommendedBookClick = (book: Book) => {
-  setSearch(book.title);
-  setSearchBy("title");
-  void handleSearch(book.title);
-};
+  const handleRecommendedBookClick = (book: Book) => {
+    setSearch(book.title);
+    setSearchBy("title");
+    void handleSearch(book.title);
+  };
 
   // Svuota la libreria senza cancellare i risultati della ricerca.
   const handleResetLibrary = () => {
@@ -185,10 +174,7 @@ const handleRecommendedBookClick = (book: Book) => {
   };
 
   // Modifica lo stato di lettura e azzera il rating se il libro non è letto.
-  const handleStatusChange = (
-    bookId: string,
-    newStatus: ReadingStatus
-  ) => {
+  const handleStatusChange = (bookId: string, newStatus: ReadingStatus) => {
     updateBookEverywhere(bookId, (book) => ({
       ...book,
       status: newStatus,
@@ -197,10 +183,7 @@ const handleRecommendedBookClick = (book: Book) => {
   };
 
   // Aggiorna il rating assegnato a un libro letto.
-  const handleRatingChange = (
-    bookId: string,
-    newRating: number
-  ) => {
+  const handleRatingChange = (bookId: string, newRating: number) => {
     updateBookEverywhere(bookId, (book) => ({
       ...book,
       rating: newRating,
@@ -220,17 +203,11 @@ const handleRecommendedBookClick = (book: Book) => {
     (book) => book.status === "want to read"
   );
 
-  const readingBooks = libraryBooks.filter(
-    (book) => book.status === "reading"
-  );
+  const readingBooks = libraryBooks.filter((book) => book.status === "reading");
 
-  const readBooks = libraryBooks.filter(
-    (book) => book.status === "read"
-  );
+  const readBooks = libraryBooks.filter((book) => book.status === "read");
 
-  const favouriteBooks = libraryBooks.filter(
-    (book) => book.isFavorite
-  );
+  const favouriteBooks = libraryBooks.filter((book) => book.isFavorite);
 
   const savedBooksCount = libraryBooks.length;
 
@@ -247,8 +224,8 @@ const handleRecommendedBookClick = (book: Book) => {
           </h1>
 
           <p className="mx-auto mt-4 max-w-xl text-slate-400">
-            Search books, track your reading status, rate completed books,
-            and save your favourites.
+            Search books, track your reading status, rate completed books, and
+            save your favourites.
           </p>
 
           <button
@@ -257,7 +234,6 @@ const handleRecommendedBookClick = (book: Book) => {
             className="mt-6 w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20 sm:w-auto"
           >
             My Library
-
             {savedBooksCount > 0 && (
               <span className="ml-2 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-200">
                 {savedBooksCount}
@@ -267,12 +243,10 @@ const handleRecommendedBookClick = (book: Book) => {
         </div>
 
         <div className="rounded-2xl border border-violet-500/20 bg-slate-900 p-4 shadow-lg shadow-black/20">
-        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <select
               value={searchBy}
-              onChange={(event) =>
-                setSearchBy(event.target.value as SearchBy)
-              }
+              onChange={(event) => setSearchBy(event.target.value as SearchBy)}
               className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none sm:w-28"
             >
               <option value="title">Title</option>
@@ -303,30 +277,17 @@ const handleRecommendedBookClick = (book: Book) => {
           </div>
         </div>
 
-        <RecommendedBooks
-  onBookClick={handleRecommendedBookClick}
-/>
-
-        {isLoading && (
-          <p className="mt-6 text-slate-400">
-            Searching books...
-          </p>
+        {!hasSearched && (
+          <RecommendedBooks onBookClick={handleRecommendedBookClick} />
         )}
 
-        {error && (
-          <p className="mt-6 text-red-400">
-            {error}
-          </p>
-        )}
+        {isLoading && <p className="mt-6 text-slate-400">Searching books...</p>}
 
-        {hasSearched &&
-          !isLoading &&
-          !error &&
-          searchResults.length === 0 && (
-            <p className="mt-6 text-slate-400">
-              No books found.
-            </p>
-          )}
+        {error && <p className="mt-6 text-red-400">{error}</p>}
+
+        {hasSearched && !isLoading && !error && searchResults.length === 0 && (
+          <p className="mt-6 text-slate-400">No books found.</p>
+        )}
 
         <BookList
           books={searchResults}

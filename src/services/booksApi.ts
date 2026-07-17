@@ -86,8 +86,7 @@ export async function getRecommendedBooks(): Promise<Book[]> {
 
   const encodedSubject = encodeURIComponent(randomSubject);
 
-  const url =
-    `https://openlibrary.org/search.json?q=${encodedSubject}&limit=20`;
+  const url = `https://openlibrary.org/search.json?q=${encodedSubject}&limit=20`;
 
   const response = await fetch(url);
 
