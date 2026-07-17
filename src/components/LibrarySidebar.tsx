@@ -22,7 +22,7 @@ export const LibrarySidebar = ({
 }: LibrarySidebarProps) => {
   return (
     <div className="fixed inset-0 z-50 bg-black/60">
-      <aside className="ml-auto flex h-full w-full max-w-md flex-col border-l border-violet-500/20 bg-slate-950 p-6 shadow-2xl shadow-black">
+      <aside className="ml-auto flex h-full w-full max-w-md flex-col bg-slate-950 p-4 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-violet-300">

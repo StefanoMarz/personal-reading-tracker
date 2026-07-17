@@ -235,14 +235,14 @@ const handleRecommendedBookClick = (book: Book) => {
   const savedBooksCount = libraryBooks.length;
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 sm:py-10">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 text-center">
           <p className="text-sm uppercase tracking-[0.2em] text-violet-300">
             Personal Reading Tracker
           </p>
 
-          <h1 className="mx-auto mt-3 max-w-3xl text-4xl font-bold text-white sm:text-5xl">
+          <h1 className="mx-auto mt-3 max-w-3xl text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
             Build your personal book space
           </h1>
 
@@ -254,7 +254,7 @@ const handleRecommendedBookClick = (book: Book) => {
           <button
             type="button"
             onClick={() => setIsLibraryOpen(true)}
-            className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+            className="mt-6 w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20 sm:w-auto"
           >
             My Library
 
@@ -267,13 +267,13 @@ const handleRecommendedBookClick = (book: Book) => {
         </div>
 
         <div className="rounded-2xl border border-violet-500/20 bg-slate-900 p-4 shadow-lg shadow-black/20">
-          <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
             <select
               value={searchBy}
               onChange={(event) =>
                 setSearchBy(event.target.value as SearchBy)
               }
-              className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none"
+              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none sm:w-28"
             >
               <option value="title">Title</option>
               <option value="author">Author</option>
@@ -296,7 +296,7 @@ const handleRecommendedBookClick = (book: Book) => {
               type="button"
               onClick={() => void handleSearch()}
               disabled={search.trim() === "" || isLoading}
-              className="rounded-xl bg-violet-600 px-5 py-3 font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-xl bg-violet-600 px-5 py-3 font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               Search
             </button>
