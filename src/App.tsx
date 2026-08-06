@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BookList } from "./components/BookList";
 import { LibrarySidebar } from "./components/LibrarySidebar";
 import { RecommendedBooks } from "./components/RecommendedBooks";
-import type { Book, ReadingStatus, LibrarySectionType } from "./types/book";
+import type { Book } from "./types/book";
 import { searchBooks, type SearchBy } from "./services/booksApi";
 import { SearchForm } from "./components/SearchForm";
-
-const LOCAL_STORAGE_KEY = "personal-reading-tracker-books";
+import { useLibrary } from "./hooks/useLibrary";
 
 const App = () => {
   const [search, setSearch] = useState("");
@@ -14,21 +13,6 @@ const App = () => {
   // Contiene solamente i risultati restituiti dall'ultima ricerca.
   const [searchResults, setSearchResults] = useState<Book[]>([]);
 
-  // Recupera la libreria personale dal localStorage all'avvio dell'app.
-  const [libraryBooks, setLibraryBooks] = useState<Book[]>(() => {
-    const savedBooks = localStorage.getItem(LOCAL_STORAGE_KEY);
-
-    if (!savedBooks) {
-      return [];
-    }
-
-    try {
-      return JSON.parse(savedBooks) as Book[];
-    } catch (error) {
-      console.error("Impossibile recuperare la libreria salvata:", error);
-      return [];
-    }
-  });
 
   const [searchBy, setSearchBy] = useState<SearchBy>("title");
   const [hasSearched, setHasSearched] = useState(false);
@@ -36,55 +20,23 @@ const App = () => {
   const [error, setError] = useState("");
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
-  // Salva la libreria nel localStorage ogni volta che viene modificata.
-  useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(libraryBooks));
-  }, [libraryBooks]);
+  const {
+    libraryBooks,
+    savedBooksCount,
+    wantToReadBooks,
+    readingBooks,
+    readBooks,
+    favouriteBooks,
+    handleResetLibrary,
+    handleRemoveFromLibrarySection,
+    handleStatusChange,
+    handleRatingChange,
+    handleFavoriteToggle,
+  } = useLibrary({
+    searchResults,
+    setSearchResults,
+  });
 
-  // Verifica se un libro contiene almeno un dato personale da salvare.
-  const isBookSaved = (book: Book) => {
-    return book.status !== "" || book.isFavorite || book.rating > 0;
-  };
-
-  /*
-   * Aggiorna un libro sia nei risultati di ricerca sia nella libreria.
-   * Se il libro non ha più stato, preferito o rating, viene rimosso
-   * dalla libreria ma resta visibile nei risultati correnti.
-   */
-  const updateBookEverywhere = (
-    bookId: string,
-    updateBook: (book: Book) => Book
-  ) => {
-    const sourceBook =
-      libraryBooks.find((book) => book.id === bookId) ??
-      searchResults.find((book) => book.id === bookId);
-
-    if (!sourceBook) {
-      return;
-    }
-
-    const updatedBook = updateBook(sourceBook);
-
-    setSearchResults((currentResults) =>
-      currentResults.map((book) => (book.id === bookId ? updatedBook : book))
-    );
-
-    setLibraryBooks((currentLibrary) => {
-      if (!isBookSaved(updatedBook)) {
-        return currentLibrary.filter((book) => book.id !== bookId);
-      }
-
-      const alreadySaved = currentLibrary.some((book) => book.id === bookId);
-
-      if (alreadySaved) {
-        return currentLibrary.map((book) =>
-          book.id === bookId ? updatedBook : book
-        );
-      }
-
-      return [...currentLibrary, updatedBook];
-    });
-  };
 
   // Esegue la ricerca dei libri tramite Open Library API.
   const handleSearch = async (
@@ -143,78 +95,6 @@ const App = () => {
     void handleSearch(book.title, "title");
   };
 
-  // Svuota la libreria senza cancellare i risultati della ricerca.
-  const handleResetLibrary = () => {
-    setLibraryBooks([]);
-
-    setSearchResults((currentResults) =>
-      currentResults.map((book) => ({
-        ...book,
-        status: "",
-        isFavorite: false,
-        rating: 0,
-      }))
-    );
-  };
-
-  // Rimuove un libro dalla specifica sezione della sidebar.
-  const handleRemoveFromLibrarySection = (
-    bookId: string,
-    section: LibrarySectionType
-  ) => {
-    updateBookEverywhere(bookId, (book) => {
-      if (section === "favourites") {
-        return {
-          ...book,
-          isFavorite: false,
-        };
-      }
-
-      return {
-        ...book,
-        status: "",
-        rating: 0,
-      };
-    });
-  };
-
-  // Modifica lo stato di lettura e azzera il rating se il libro non è letto.
-  const handleStatusChange = (bookId: string, newStatus: ReadingStatus) => {
-    updateBookEverywhere(bookId, (book) => ({
-      ...book,
-      status: newStatus,
-      rating: newStatus === "read" ? book.rating : 0,
-    }));
-  };
-
-  // Aggiorna il rating assegnato a un libro letto.
-  const handleRatingChange = (bookId: string, newRating: number) => {
-    updateBookEverywhere(bookId, (book) => ({
-      ...book,
-      rating: newRating,
-    }));
-  };
-
-  // Aggiunge o rimuove un libro dai preferiti.
-  const handleFavoriteToggle = (bookId: string) => {
-    updateBookEverywhere(bookId, (book) => ({
-      ...book,
-      isFavorite: !book.isFavorite,
-    }));
-  };
-
-  // Divide i libri salvati nelle sezioni mostrate nella sidebar.
-  const wantToReadBooks = libraryBooks.filter(
-    (book) => book.status === "want to read"
-  );
-
-  const readingBooks = libraryBooks.filter((book) => book.status === "reading");
-
-  const readBooks = libraryBooks.filter((book) => book.status === "read");
-
-  const favouriteBooks = libraryBooks.filter((book) => book.isFavorite);
-
-  const savedBooksCount = libraryBooks.length;
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white sm:px-6 sm:py-10">
