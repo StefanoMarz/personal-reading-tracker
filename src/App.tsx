@@ -86,8 +86,12 @@ const App = () => {
   };
 
   // Esegue la ricerca dei libri tramite Open Library API.
-  const handleSearch = async (customQuery?: string) => {
+  const handleSearch = async (
+    customQuery?: string,
+    customSearchBy?: SearchBy
+  ) => {
     const cleanSearch = (customQuery ?? search).trim();
+    const selectedSearchBy = customSearchBy ?? searchBy;
 
     if (cleanSearch === "") {
       return;
@@ -98,7 +102,7 @@ const App = () => {
     setError("");
 
     try {
-      const results = await searchBooks(cleanSearch, searchBy);
+      const results = await searchBooks(cleanSearch, selectedSearchBy);
 
       /*
        * Se un risultato è già presente nella libreria, recupera
@@ -135,7 +139,7 @@ const App = () => {
   const handleRecommendedBookClick = (book: Book) => {
     setSearch(book.title);
     setSearchBy("title");
-    void handleSearch(book.title);
+    void handleSearch(book.title, "title");
   };
 
   // Svuota la libreria senza cancellare i risultati della ricerca.
