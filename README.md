@@ -1,96 +1,101 @@
 # Personal Reading Tracker
 
-Personal Reading Tracker è una web app sviluppata con React, TypeScript, Tailwind CSS e Vite.
+Personal Reading Tracker is a responsive web application built with React, TypeScript, Tailwind CSS, and Vite.
 
-L’app permette di cercare libri tramite la Open Library API, visualizzare i risultati in card, assegnare uno stato di lettura, valutare i libri completati e salvare i preferiti in una libreria personale persistente.
+The application allows users to search for books through the Open Library API, manage a personal reading library, assign reading statuses, rate completed books, and save their favourite titles.
 
-Il progetto è stato realizzato come applicazione portfolio per consolidare i principali concetti di React, TypeScript e frontend development attraverso una piccola applicazione completa e realistica.
+The project was created as part of my frontend development portfolio to practise React, TypeScript, API integration, state management, data persistence, and component-based application design.
 
 ## Live Demo
 
 [View the live application](https://personal-reading-tracker-blue.vercel.app/)
 
-## Funzionalità
+## Features
 
-* Ricerca di libri per titolo o autore
-* Recupero di dati reali tramite Open Library API
-* Visualizzazione dei risultati in card responsive
-* Informazioni mostrate per ogni libro:
+- Search for books by title or author
+- Retrieve real book data from the Open Library API
+- Display search results in responsive cards
+- View information about each book:
+  - Cover image
+  - Title
+  - Author
+  - Publication year
+  - Publisher
+  - Number of pages
+- Assign a reading status:
+  - Want to read
+  - Reading
+  - Read
+- Rate completed books from 1 to 5 stars
+- Restrict ratings to books marked as `Read`
+- Add or remove books from favourites
+- Keep the personal library separate from search results
+- Persist the personal library using `localStorage`
+- Automatically restore saved statuses, ratings, and favourites in new search results
+- Browse the personal library through a dedicated sidebar
+- Organise saved books into the following sections:
+  - Want to read
+  - Reading
+  - Read
+  - Favourites
+- Expand and collapse library sections
+- Remove individual books from a specific library section
+- Reset the entire personal library
+- Browse recommended books through a carousel
+- Automatically scroll the recommendation carousel
+- Navigate the carousel manually
+- Pause automatic scrolling while hovering over the carousel
+- Start a title search by selecting a recommended book
+- Use the search form by clicking the button or pressing Enter
+- Use the application across desktop and mobile devices
 
-  * copertina
-  * titolo
-  * autore
-  * anno di pubblicazione
-  * editore
-  * numero di pagine
+## Technology Stack
 
-* Gestione dello stato di lettura:
+- React
+- TypeScript
+- Tailwind CSS
+- Vite
+- Open Library API
+- Browser `localStorage`
+- ESLint
+- Vercel
 
-  * Want to read
-  * Reading
-  * Read
-* Sistema di valutazione da 1 a 5 stelle
-* Rating disponibile solo per i libri con stato `Read`
-* Possibilità di aggiungere o rimuovere libri dai preferiti
-* Libreria personale separata dai risultati di ricerca
-* Persistenza della libreria tramite `localStorage`
-* Ripristino automatico di stato, preferiti e rating nei risultati già salvati
-* Sidebar “My Library” con sezioni dedicate:
+## Concepts Practised
 
-  * Want to read
-  * Reading
-  * Read
-  * Favourites
-* Sezioni apribili e richiudibili tramite accordion
-* Rimozione dei singoli libri dalle sezioni
-* Reset completo della libreria
-* Carousel di libri consigliati recuperati dalla Open Library API
-* Scorrimento automatico del carousel
-* Navigazione manuale tramite frecce laterali
-* Pausa automatica del carousel al passaggio del mouse
-* Ricerca automatica cliccando su un libro consigliato
-* Interfaccia responsive realizzata con Tailwind CSS
+During the development of this project, I worked with:
 
-## Stack utilizzato
+- React components
+- Typed component props
+- Custom hooks
+- Separation of concerns
+- Controlled inputs
+- Form submission
+- Event handling
+- `useState`
+- `useEffect`
+- `useRef`
+- Application state management
+- Separation between search results and the personal library
+- Arrays of objects
+- `map`, `filter`, `find`, and `some`
+- Conditional rendering
+- Functions passed as props
+- Immutable state updates
+- API requests with `fetch`
+- `async` and `await`
+- Loading and error states
+- Transformation of external API data
+- TypeScript types
+- Fallback values for missing API data
+- Data persistence with `localStorage`
+- Timers with `setInterval`
+- React effect cleanup
+- Horizontal scrolling with DOM references
+- Responsive layouts with Tailwind CSS
+- Git branches and pull requests
+- Production builds and deployment
 
-* React
-* TypeScript
-* Tailwind CSS
-* Vite
-* Open Library API
-* localStorage
-
-## Concetti praticati
-
-Durante lo sviluppo del progetto ho lavorato su:
-
-* componenti React
-* props tipizzate
-* `useState`
-* `useEffect`
-* `useRef`
-* input controllati
-* gestione degli eventi
-* gestione dello stato dell’applicazione
-* separazione tra risultati di ricerca e libreria personale
-* array di oggetti
-* metodi `map`, `filter`, `find` e `some`
-* rendering condizionale
-* funzioni passate come props
-* aggiornamento immutabile dello state
-* chiamate API con `fetch`
-* `async / await`
-* gestione di loading ed errori
-* trasformazione dei dati ricevuti da API esterne
-* definizione di tipi con TypeScript
-* gestione dei fallback per dati mancanti
-* persistenza dei dati tramite `localStorage`
-* timer con `setInterval`
-* pulizia degli effetti React
-* scorrimento orizzontale tramite riferimenti DOM
-* layout responsive con Tailwind CSS
-
-## Struttura del progetto
+## Project Structure
 
 ```text
 src/
@@ -101,6 +106,9 @@ src/
     LibrarySidebar.tsx
     RecommendedBookCard.tsx
     RecommendedBooks.tsx
+    SearchForm.tsx
+  hooks/
+    useLibrary.ts
   services/
     booksApi.ts
   types/
@@ -110,71 +118,129 @@ src/
   index.css
 ```
 
-## API utilizzata
+## Application Architecture
 
-Il progetto utilizza la Open Library Search API.
+The application separates its main responsibilities into components, services, types, and custom hooks.
 
-Esempio di endpoint per la ricerca per titolo:
+### Components
+
+The user interface is divided into reusable components responsible for displaying search results, individual book cards, recommendations, the search form, and the personal library sidebar.
+
+### API service
+
+The `booksApi.ts` service handles communication with the Open Library API and converts external data into the internal `Book` type used by the application.
+
+### Library hook
+
+The `useLibrary` custom hook manages:
+
+- The personal library state
+- Reading statuses
+- Ratings
+- Favourites
+- Library sections
+- Library reset
+- Synchronisation with search results
+- Persistence through `localStorage`
+
+This keeps library-related logic separate from the main `App` component.
+
+## Open Library API
+
+The application uses the Open Library Search API.
+
+Example endpoint for a title search:
 
 ```text
 https://openlibrary.org/search.json?title=harry%20potter&limit=12
 ```
 
-I dati restituiti dall’API vengono trasformati nel tipo interno `Book`, in modo che il resto dell’applicazione possa lavorare con una struttura più pulita e prevedibile.
+The returned data is transformed into the internal `Book` type so that the rest of the application can work with a consistent and predictable structure.
 
-Quando alcuni dati non sono disponibili, l’app utilizza valori di fallback per autore, anno, editore, numero di pagine e copertina.
+Fallback values are used when information such as the author, publisher, publication year, page count, or cover image is unavailable.
 
-## Persistenza dei dati
+## Data Persistence
 
-I risultati di ricerca e la libreria personale sono gestiti separatamente.
+Search results and the personal library are managed separately.
 
-I risultati restituiti dall’API vengono salvati nello stato `searchResults`, mentre i libri modificati dall’utente vengono conservati nello stato `libraryBooks`.
+Search results returned by the API are stored in the `searchResults` state.
 
-Solo la libreria personale viene salvata nel `localStorage`. In questo modo una nuova ricerca non cancella i libri già salvati.
+The `useLibrary` custom hook manages the `libraryBooks` state, library operations, and data persistence.
 
-Quando un libro presente nella libreria compare nuovamente nei risultati, l’app ripristina automaticamente:
+Only books containing personal information are stored in `localStorage`. This includes books with:
 
-* stato di lettura
-* preferito
-* rating
+- A reading status
+- A rating
+- Favourite status
 
-## Avvio del progetto
+Starting a new search does not remove previously saved books.
 
-Dopo aver clonato il repository, installare le dipendenze:
+When a saved book appears again in the search results, the application automatically restores its:
+
+- Reading status
+- Rating
+- Favourite status
+
+## Running the Project Locally
+
+Clone the repository:
+
+```bash
+git clone https://github.com/StefanoMarz/personal-reading-tracker.git
+```
+
+Open the project directory:
+
+```bash
+cd personal-reading-tracker
+```
+
+Install the dependencies:
 
 ```bash
 npm install
 ```
 
-Avviare il server di sviluppo:
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-Creare la build di produzione:
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+Create a production build:
 
 ```bash
 npm run build
 ```
 
-## Possibili evoluzioni future
+## Planned Improvements
 
-* aggiungere una modale con maggiori dettagli sul libro
-* migliorare le animazioni della sidebar e degli accordion
-* aggiungere filtri e ordinamento nella libreria
-* aggiungere stati vuoti più dettagliati
-* introdurre test per componenti e funzioni principali
-* aggiungere la possibilità di scrivere recensioni personali
-* collegare un database o un sistema di autenticazione
-* migliorare l’accessibilità tramite navigazione da tastiera
+- Add a detailed book page or modal
+- Add personal notes and reviews
+- Add reading progress tracking
+- Add start and completion dates
+- Add library filters and sorting
+- Add reading statistics and yearly goals
+- Improve keyboard navigation and accessibility
+- Add automated tests for components and application logic
+- Replace `localStorage` with a Node.js backend and PostgreSQL database
+- Add user authentication
+- Provide a separate personal library for each registered user
 
-## Obiettivo del progetto
+## Project Goal
 
-Questo progetto è stato creato per mettere in pratica React, TypeScript e Tailwind CSS attraverso una piccola applicazione realistica, sviluppata a partire da un’idea personale.
+The main objective of this project is to demonstrate my ability to build a complete frontend application using React and TypeScript.
 
-L’obiettivo principale è mostrare la capacità di lavorare con componenti riutilizzabili, API esterne, gestione dello stato, persistenza dei dati, TypeScript e interfacce responsive.
+The application combines reusable components, external API integration, state management, data transformation, persistence, responsive design, and structured application logic.
 
-## Autore
+It will later be expanded into a full-stack application using Node.js and PostgreSQL.
 
-Realizzato da Stefano Marzella come parte del mio percorso di crescita nel frontend development.
+## Author
+
+Created by Stefano Marzella as part of my professional development journey in frontend and full-stack web development.
