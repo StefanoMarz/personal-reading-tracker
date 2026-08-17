@@ -1,6 +1,6 @@
 # Personal Reading Tracker
 
-Personal Reading Tracker is a responsive web application built with React, TypeScript, Tailwind CSS, and Vite.
+Personal Reading Tracker is a responsive React and TypeScript application with authentication and per-user PostgreSQL persistence powered by Supabase.
 
 The application allows users to search for books through the Open Library API, manage a personal reading library, assign reading statuses, rate completed books, and save their favourite titles.
 
@@ -30,7 +30,13 @@ The project was created as part of my frontend development portfolio to practise
 - Restrict ratings to books marked as `Read`
 - Add or remove books from favourites
 - Keep the personal library separate from search results
-- Persist the personal library using `localStorage`
+- Use the full application without registering through guest mode
+- Persist the guest library using `localStorage`
+- Create an account and sign in with email and password
+- Edit first name, last name, and email
+- Persist a separate library for each registered user with Supabase
+- Import and merge a guest library into a registered account
+- Protect user data with PostgreSQL Row Level Security policies
 - Automatically restore saved statuses, ratings, and favourites in new search results
 - Browse the personal library through a dedicated sidebar
 - Organise saved books into the following sections:
@@ -57,7 +63,12 @@ The project was created as part of my frontend development portfolio to practise
 - Vite
 - Open Library API
 - Browser `localStorage`
+- Supabase Auth and Data API
+- PostgreSQL
+- SQL migrations and Row Level Security
 - ESLint
+- Vitest
+- React Testing Library
 - Vercel
 
 ## Concepts Practised
@@ -88,6 +99,11 @@ During the development of this project, I worked with:
 - TypeScript types
 - Fallback values for missing API data
 - Data persistence with `localStorage`
+- Authentication and browser sessions
+- CRUD operations through the Supabase Data API
+- PostgreSQL tables, constraints, grants, and RLS policies
+- Guest/account data migration and conflict resolution
+- Component and domain-logic testing
 - Timers with `setInterval`
 - React effect cleanup
 - Horizontal scrolling with DOM references
@@ -102,20 +118,32 @@ src/
   components/
     BookCard.tsx
     BookList.tsx
+    AuthDialog.tsx
     LibrarySection.tsx
     LibrarySidebar.tsx
+    ProfileDialog.tsx
     RecommendedBookCard.tsx
     RecommendedBooks.tsx
     SearchForm.tsx
   hooks/
+    useAuth.ts
     useLibrary.ts
+  lib/
+    supabase.ts
   services/
     booksApi.ts
+    libraryApi.ts
+  test/
+    setup.ts
   types/
     book.ts
+  utils/
+    libraryBooks.ts
   App.tsx
   main.tsx
   index.css
+supabase/
+  migrations/
 ```
 
 ## Application Architecture
@@ -141,7 +169,9 @@ The `useLibrary` custom hook manages:
 - Library sections
 - Library reset
 - Synchronisation with search results
-- Persistence through `localStorage`
+- Guest persistence through `localStorage`
+- Remote persistence through Supabase for authenticated users
+- Guest-library import and merging
 
 This keeps library-related logic separate from the main `App` component.
 
@@ -159,21 +189,31 @@ The returned data is transformed into the internal `Book` type so that the rest 
 
 Fallback values are used when information such as the author, publisher, publication year, page count, or cover image is unavailable.
 
-## Data Persistence
+## Authentication and Data Persistence
 
 Search results and the personal library are managed separately.
 
 Search results returned by the API are stored in the `searchResults` state.
 
-The `useLibrary` custom hook manages the `libraryBooks` state, library operations, and data persistence.
+The `useAuth` hook manages registration, login, logout, profile updates, and session restoration through Supabase Auth.
 
-Only books containing personal information are stored in `localStorage`. This includes books with:
+The `useLibrary` custom hook manages `libraryBooks`, library operations, and the active persistence mode:
+
+- Guests store their library in browser `localStorage`.
+- Authenticated users read and write their library in the PostgreSQL `library_books` table.
+- When a guest signs in, the application can import and merge local books without blindly replacing existing account data.
+
+The `libraryApi.ts` service contains the database mapping and CRUD operations. Database responses are validated at runtime before being converted to the internal `Book` type.
+
+Row Level Security policies compare every row's `user_id` with the authenticated user ID. Users can therefore read and modify only their own library.
+
+Only books containing personal information are persisted. This includes books with:
 
 - A reading status
 - A rating
 - Favourite status
 
-Starting a new search does not remove previously saved books.
+Starting a new search does not remove previously saved books. Fresh Open Library metadata stays separate from personal fields such as status, rating, and favourite membership.
 
 When a saved book appears again in the search results, the application automatically restores its:
 
@@ -201,6 +241,15 @@ Install the dependencies:
 npm install
 ```
 
+Copy `.env.example` to `.env.local` and add the Supabase project URL and publishable key:
+
+```env
+VITE_SUPABASE_URL=your-project-url
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+```
+
+Apply the SQL migration in `supabase/migrations` to the Supabase project and configure the local authentication redirect URL as `http://localhost:5173/**`.
+
 Start the development server:
 
 ```bash
@@ -211,6 +260,12 @@ Run ESLint:
 
 ```bash
 npm run lint
+```
+
+Run the automated tests:
+
+```bash
+npm run test
 ```
 
 Create a production build:
@@ -225,21 +280,18 @@ npm run build
 - Add personal notes and reviews
 - Add reading progress tracking
 - Add start and completion dates
-- Add library filters and sorting
 - Add reading statistics and yearly goals
-- Improve keyboard navigation and accessibility
-- Add automated tests for components and application logic
-- Replace `localStorage` with a Node.js backend and PostgreSQL database
-- Add user authentication
-- Provide a separate personal library for each registered user
+- Add sorting and filtering to the saved library
+- Add password recovery
+- Configure a production email provider for authentication emails
+- Expand the automated test coverage for remote failures
+- Build a separate small Node.js API project to practise custom backend fundamentals
 
 ## Project Goal
 
-The main objective of this project is to demonstrate my ability to build a complete frontend application using React and TypeScript.
+The main objective of this project is to demonstrate my ability to build a complete frontend application using React and TypeScript while integrating a real backend service and relational database.
 
-The application combines reusable components, external API integration, state management, data transformation, persistence, responsive design, and structured application logic.
-
-It will later be expanded into a full-stack application using Node.js and PostgreSQL.
+The application combines reusable components, external API integration, authentication, server-state synchronization, SQL migrations, secure per-user persistence, testing, responsive design, and structured application logic.
 
 ## Author
 

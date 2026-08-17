@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BookList } from "./components/BookList";
 import { LibrarySidebar } from "./components/LibrarySidebar";
 import { RecommendedBooks } from "./components/RecommendedBooks";
@@ -6,6 +6,9 @@ import type { Book } from "./types/book";
 import { searchBooks, type SearchBy } from "./services/booksApi";
 import { SearchForm } from "./components/SearchForm";
 import { useLibrary } from "./hooks/useLibrary";
+import { AuthDialog } from "./components/AuthDialog";
+import { ProfileDialog } from "./components/ProfileDialog";
+import { useAuth } from "./hooks/useAuth";
 
 const App = () => {
   const [search, setSearch] = useState("");
@@ -19,6 +22,28 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
+  const activeSearchControllerRef = useRef<AbortController | null>(null);
+  const searchRequestIdRef = useRef(0);
+  const libraryBooksRef = useRef<Book[]>([]);
+  const libraryButtonRef = useRef<HTMLButtonElement>(null);
+
+  const {
+    userId,
+    profile,
+    isAuthLoading,
+    authInitializationError,
+    signIn,
+    signUp,
+    signOut,
+    updateProfile,
+  } = useAuth();
+
+  const libraryTitle = profile?.firstName
+    ? `${profile.firstName}’s Library`
+    : "My Library";
 
   const {
     libraryBooks,
@@ -27,6 +52,14 @@ const App = () => {
     readingBooks,
     readBooks,
     favouriteBooks,
+    isLibraryLoading,
+    libraryError,
+    libraryNotice,
+    guestBooksToImportCount,
+    isImportingGuestLibrary,
+    importGuestLibrary,
+    dismissGuestLibraryImport,
+    retryLibrary,
     handleResetLibrary,
     handleRemoveFromLibrarySection,
     handleStatusChange,
@@ -35,7 +68,18 @@ const App = () => {
   } = useLibrary({
     searchResults,
     setSearchResults,
+    userId,
   });
+
+  useEffect(() => {
+    // FIX: una ricerca può terminare dopo che la libreria è stata modificata.
+    // Il ref permette di unire sempre i dati personali più recenti.
+    libraryBooksRef.current = libraryBooks;
+  }, [libraryBooks]);
+
+  useEffect(() => {
+    return () => activeSearchControllerRef.current?.abort();
+  }, []);
 
 
   // Esegue la ricerca dei libri tramite Open Library API.
@@ -50,19 +94,31 @@ const App = () => {
       return;
     }
 
+    // FIX: annulla la richiesta precedente per evitare che una risposta lenta
+    // sovrascriva i risultati di una ricerca più recente.
+    activeSearchControllerRef.current?.abort();
+    const controller = new AbortController();
+    const requestId = searchRequestIdRef.current + 1;
+    searchRequestIdRef.current = requestId;
+    activeSearchControllerRef.current = controller;
+
     setHasSearched(true);
     setIsLoading(true);
     setError("");
 
     try {
-      const results = await searchBooks(cleanSearch, selectedSearchBy);
+      const results = await searchBooks(
+        cleanSearch,
+        selectedSearchBy,
+        controller.signal
+      );
 
       /*
        * Se un risultato è già presente nella libreria, recupera
        * il suo stato, il rating e il valore del preferito.
        */
       const resultsWithSavedData = results.map((result) => {
-        const savedBook = libraryBooks.find(
+        const savedBook = libraryBooksRef.current.find(
           (libraryBook) => libraryBook.id === result.id
         );
 
@@ -80,11 +136,18 @@ const App = () => {
       setSearchResults(resultsWithSavedData);
       setSearch("");
     } catch (error) {
+      if (controller.signal.aborted) {
+        return;
+      }
+
       console.error(error);
       setSearchResults([]);
       setError("Something went wrong while searching books.");
     } finally {
-      setIsLoading(false);
+      if (requestId === searchRequestIdRef.current) {
+        setIsLoading(false);
+        activeSearchControllerRef.current = null;
+      }
     }
   };
 
@@ -94,6 +157,31 @@ const App = () => {
     setSearchBy("title");
     void handleSearch(book.title, "title");
   };
+
+  const handleSignOut = async () => {
+    setSignOutError("");
+    const nextSignOutError = await signOut();
+
+    if (nextSignOutError) {
+      setSignOutError(nextSignOutError);
+    }
+  };
+
+  const handleOpenAuth = () => {
+    setSignOutError("");
+    setIsAuthOpen(true);
+  };
+
+  const handleCloseLibrary = useCallback(() => {
+    setIsLibraryOpen(false);
+    window.requestAnimationFrame(() => libraryButtonRef.current?.focus());
+  }, []);
+
+  const handleCloseAuth = useCallback(() => setIsAuthOpen(false), []);
+  const handleCloseProfile = useCallback(
+    () => setIsProfileOpen(false),
+    []
+  );
 
 
   return (
@@ -113,18 +201,21 @@ const App = () => {
             save your favourites.
           </p>
 
-          <button
-            type="button"
-            onClick={() => setIsLibraryOpen(true)}
-            className="mt-6 w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20 sm:w-auto"
-          >
-            My Library
-            {savedBooksCount > 0 && (
-              <span className="ml-2 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-200">
-                {savedBooksCount}
-              </span>
-            )}
-          </button>
+          <div className="mt-6 flex justify-center">
+            <button
+              ref={libraryButtonRef}
+              type="button"
+              onClick={() => setIsLibraryOpen(true)}
+              className="w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20 sm:w-auto"
+            >
+              {libraryTitle}
+              {savedBooksCount > 0 && (
+                <span className="ml-2 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-200">
+                  {savedBooksCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         <SearchForm
@@ -162,9 +253,40 @@ const App = () => {
           readingBooks={readingBooks}
           readBooks={readBooks}
           favouriteBooks={favouriteBooks}
-          onClose={() => setIsLibraryOpen(false)}
+          libraryTitle={libraryTitle}
+          profile={profile}
+          isAuthLoading={isAuthLoading}
+          authError={authInitializationError || signOutError}
+          isLibraryLoading={isLibraryLoading}
+          libraryError={libraryError}
+          libraryNotice={libraryNotice}
+          guestBooksToImportCount={guestBooksToImportCount}
+          isImportingGuestLibrary={isImportingGuestLibrary}
+          onClose={handleCloseLibrary}
+          onOpenAuth={handleOpenAuth}
+          onEditProfile={() => setIsProfileOpen(true)}
+          onSignOut={() => void handleSignOut()}
+          onRetryLibrary={retryLibrary}
+          onImportGuestLibrary={() => void importGuestLibrary()}
+          onDismissGuestLibraryImport={dismissGuestLibraryImport}
           onResetLibrary={handleResetLibrary}
           onRemoveBook={handleRemoveFromLibrarySection}
+        />
+      )}
+
+      {isAuthOpen && (
+        <AuthDialog
+          onClose={handleCloseAuth}
+          onSignIn={signIn}
+          onSignUp={signUp}
+        />
+      )}
+
+      {isProfileOpen && profile && (
+        <ProfileDialog
+          profile={profile}
+          onClose={handleCloseProfile}
+          onUpdateProfile={updateProfile}
         />
       )}
     </main>
