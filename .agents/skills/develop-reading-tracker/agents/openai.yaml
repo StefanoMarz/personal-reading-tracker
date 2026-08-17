@@ -1,0 +1,4 @@
+interface:
+  display_name: "Develop Reading Tracker"
+  short_description: "Workflow for this React reading tracker"
+  default_prompt: "Use $develop-reading-tracker to implement and verify a focused change in this project."

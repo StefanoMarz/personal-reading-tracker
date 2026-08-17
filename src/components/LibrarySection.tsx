@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { Book, LibrarySectionType } from "../types/book";
 
 type LibrarySectionProps = {
@@ -17,12 +17,15 @@ export const LibrarySection = ({
   onRemoveBook,
 }: LibrarySectionProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const contentId = useId();
 
   return (
     <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-controls={contentId}
         className="flex w-full items-center justify-between text-left"
       >
         <div>
@@ -36,7 +39,7 @@ export const LibrarySection = ({
       </button>
 
       {isOpen && books.length > 0 && (
-        <ul className="mt-4 space-y-3">
+        <ul id={contentId} className="mt-4 space-y-3">
           {books.map((book) => (
             <li
               key={book.id}
@@ -106,7 +109,9 @@ export const LibrarySection = ({
       )}
 
       {isOpen && books.length === 0 && (
-        <p className="mt-4 text-sm text-slate-500">No books yet.</p>
+        <p id={contentId} className="mt-4 text-sm text-slate-500">
+          No books yet.
+        </p>
       )}
     </section>
   );

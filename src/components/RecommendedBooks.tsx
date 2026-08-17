@@ -18,22 +18,34 @@ export const RecommendedBooks = ({ onBookClick }: RecommendedBooksProps) => {
 
   // Recupera i libri consigliati quando il componente viene caricato.
   useEffect(() => {
+    const controller = new AbortController();
+
     const loadRecommendedBooks = async () => {
       try {
         setIsLoading(true);
         setHasError(false);
 
-        const books = await getRecommendedBooks();
+        const books = await getRecommendedBooks(controller.signal);
         setRecommendedBooks(books);
       } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
         console.error("Impossibile caricare i libri consigliati:", error);
         setHasError(true);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     void loadRecommendedBooks();
+
+    // FIX: annulla il fetch quando il carosello viene rimosso (per esempio dopo
+    // una ricerca), evitando aggiornamenti tardivi e richieste duplicate in dev.
+    return () => controller.abort();
   }, []);
 
   // Sposta il carousel nella direzione indicata.

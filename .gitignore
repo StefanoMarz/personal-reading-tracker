@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 *.tsbuildinfo
+
+# Le variabili reali restano solo sul computer dello sviluppatore.
+# Il file di esempio, privo di segreti, deve invece essere versionato.
+.env
+.env.*
+!.env.example

@@ -15,7 +15,55 @@ type OpenLibraryBook = {
 
 // Tipizza la struttura principale della risposta di Open Library.
 type OpenLibraryResponse = {
-  docs: OpenLibraryBook[];
+  docs: unknown[];
+};
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "string");
+
+const isOpenLibraryBook = (value: unknown): value is OpenLibraryBook => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const book = value as Record<string, unknown>;
+
+  return (
+    typeof book.key === "string" &&
+    typeof book.title === "string" &&
+    (book.author_name === undefined || isStringArray(book.author_name)) &&
+    (book.first_publish_year === undefined ||
+      typeof book.first_publish_year === "number") &&
+    (book.publisher === undefined || isStringArray(book.publisher)) &&
+    (book.cover_i === undefined || typeof book.cover_i === "number") &&
+    (book.number_of_pages_median === undefined ||
+      typeof book.number_of_pages_median === "number")
+  );
+};
+
+const fetchOpenLibraryBooks = async (
+  url: string,
+  signal?: AbortSignal
+): Promise<OpenLibraryBook[]> => {
+  const response = await fetch(url, { signal });
+
+  if (!response.ok) {
+    throw new Error(`Open Library request failed with status ${response.status}`);
+  }
+
+  const data: unknown = await response.json();
+
+  // FIX: i tipi TypeScript non convalidano i dati ricevuti dalla rete.
+  // Scartiamo quindi record malformati invece di far fallire tutta l'interfaccia.
+  if (
+    typeof data !== "object" ||
+    data === null ||
+    !Array.isArray((data as OpenLibraryResponse).docs)
+  ) {
+    throw new Error("Open Library returned an invalid response");
+  }
+
+  return (data as OpenLibraryResponse).docs.filter(isOpenLibraryBook);
 };
 
 // Argomenti utilizzati per ottenere consigli diversi a ogni caricamento.
@@ -57,7 +105,8 @@ const mapOpenLibraryBook = (book: OpenLibraryBook): Book => {
 // Cerca i libri per titolo oppure per autore.
 export async function searchBooks(
   query: string,
-  searchBy: SearchBy
+  searchBy: SearchBy,
+  signal?: AbortSignal
 ): Promise<Book[]> {
   const encodedQuery = encodeURIComponent(query);
 
@@ -66,19 +115,15 @@ export async function searchBooks(
       ? `https://openlibrary.org/search.json?title=${encodedQuery}&limit=12`
       : `https://openlibrary.org/search.json?author=${encodedQuery}&limit=12`;
 
-  const response = await fetch(url);
+  const books = await fetchOpenLibraryBooks(url, signal);
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch books");
-  }
-
-  const data: OpenLibraryResponse = await response.json();
-
-  return data.docs.map(mapOpenLibraryBook);
+  return books.map(mapOpenLibraryBook);
 }
 
 // Recupera un gruppo di libri consigliati scegliendo un argomento casuale.
-export async function getRecommendedBooks(): Promise<Book[]> {
+export async function getRecommendedBooks(
+  signal?: AbortSignal
+): Promise<Book[]> {
   const randomSubject =
     recommendationSubjects[
       Math.floor(Math.random() * recommendationSubjects.length)
@@ -88,17 +133,11 @@ export async function getRecommendedBooks(): Promise<Book[]> {
 
   const url = `https://openlibrary.org/search.json?q=${encodedSubject}&limit=20`;
 
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch recommended books");
-  }
-
-  const data: OpenLibraryResponse = await response.json();
+  const books = await fetchOpenLibraryBooks(url, signal);
 
   //Esclude i libri privi di copertina perché le immagini in questo caso sono prioritarie
 
-  return data.docs
+  return books
     .filter((book) => book.cover_i)
     .slice(0, 12)
     .map(mapOpenLibraryBook);
